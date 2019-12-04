@@ -1,0 +1,113 @@
+LVM  WE CREEME
+
+
+Crear y gestionar lvm
+
+
+Logical volume manager, como funcion principal da la posibilidad de crear unidades logicas utilizando dispositivos fisicos. Se recomienda para usar con RAID 10 y con items de usuarios
+
+
+Jerarquia LVM:
+
+SDB - SDC - SDE
+
+PV0 - PV1 //volumenes fisicos. (Discos, RAID)
+
+LV0 - LV1 //Grupo de volumenes //se agrupan volumenes fisicos
+
+VG0 //Volumenes Logicos //Se encarga de mostrar la informacion y montar
+
+
+Resize2fs //se utiliza con extensiones tipo extensions 4
+
+//PREVIOS:
+
+Agregar dos discos de 100 MB o mas a la maqina virtual 
+
+VDI
+
+TAMAÑO FIJO
+
+SDA // DISCO DEL SISTEMA OPERATIVO
+
+TENEMOS DOS MAS SDB Y SDC
+
+
+
+Montaje:
+
+1°: fdisk -l /dev/sdb //con esto vemos si hay particiones y la capacidad del disco
+
+2°: Agregamos 2 particiones de discos //1 particion primaria de 30 MB 2 PARTICION PRIMARIA DEL RESTO DEL DISCO
+
+	-sudo fdisk
+	-n
+	-p 
+	-enter
+	-+30MB
+	-n
+	-p 
+	-2 //Segunda particion
+	-enter // comienzo todo el disco
+	-enter // comienzo todo el disco
+	
+3°: Se cambia el tipo de particion de 83(linux) a 8e (linux LVM)
+
+	-t
+	-2
+	-8e
+	*hacemos lo mismo con el sdc
+	
+4°: Creamos el PV (volumen fisico) donde le indicamos las particiones creadas
+
+	-pvcreate /dev/sdb1 /dev/sdb2 /dev/sdc1 /dev/sdc2
+	- pvs para ver los volumenes fisicos
+
+5°: Agrupamos los volumenes fisicos en volumen group
+
+	-vgcreate vg01 /dev/sdb1
+	-vgcreate vg02 /dev/sdc1
+	-VGS //PARA VER LOS VOLUMEN GROUPS
+	
+6°: Creamos logical volume (LV), donde se crearan nuevamente las particiones logicas. para esto vamos a crear las siguientes //vg01  lvwww (10MB) - vg02 lvdb (todo el espacio)
+
+	-lvcreate -L +10MB -n lvwww vg01
+	-lvcreate -l +100%FREE -n lvdb vg02
+	
+7°: Formateamos las particiones logicas con mkfs.ext4
+
+	-mkfs.ext4 /dev/vg01/lvwww
+	-mkfs.ext4 /dev/vg01/lvdb
+
+8°: Realizamos montajes
+
+	-mkdir /www /db
+	-enter
+	-mount /dev/vg01 /lvwww
+	-mount /dev/vg02 /db
+
+9°: Verificamos espacios con el comando df -h
+
+	-Utilizamos sudo nano /etc/fstab para poder montar de forma permanente
+
+10°: Expandimos en caliente el disco osea el volumen group
+
+	-vgextend vg01 /dev/sdb2
+	-usamos vgs para ver como quedo el volumen group
+	
+11°: Expandimos el LV con lvextend
+	
+	-lvextend -L +20MB /dev/vg01/lvwww
+	-lvs para ver que se expandio
+
+12°:Ejecutamos resize2fs /dev/vg01/lvwww porque sino no se graba
+
+	-Despues para verificar df -h
+
+
+
+
+  # apt-get install nombre_del_paquete
+
+
+
